@@ -58,6 +58,10 @@ repos:
         args:
           - --schemafile
           - https://json.schemastore.org/container-structure-test.json
+      - id: check-renovate
+        additional_dependencies:
+          # renovate: datasource=pypi
+          - pyjson5==1.6.9
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.37.1
     hooks:

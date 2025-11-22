@@ -1,0 +1,47 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+name: "get-version"
+description: "Get version"
+inputs:
+  gitversion_version:
+    required: true
+    description: "GitVersion version"
+    default: '6.4.0'
+  set_version:
+    required: true
+    description: "Set version in version file"
+    default: 'true'
+outputs:
+  version:
+    description: "Version"
+    value: ${{ steps.actual_version.outputs.version }}
+  docker_version:
+    description: "Docker Version"
+    value: ${{ steps.actual_version.outputs.docker_version }}
+runs:
+  using: "composite"
+  steps:
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v4
+      with:
+        versionSpec: ${{ inputs.gitversion_version }}
+
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v4
+      with:
+        disableCache: true
+
+    - name: Extract output
+      id: actual_version
+      shell: bash
+      run: |
+        echo "version=${{ github.ref_name == github.event.repository.default_branch && steps.gitversion.outputs.MajorMinorPatch || steps.gitversion.outputs.InformationalVersion }}" >> $GITHUB_OUTPUT
+        echo "docker_version=${{ github.ref_name == github.event.repository.default_branch && steps.gitversion.outputs.MajorMinorPatch || format('{0}{1}', steps.gitversion.outputs.MajorMinorPatch, steps.gitversion.outputs.PreReleaseTag) }}" >> $GITHUB_OUTPUT
+
+    - name: Set version
+      shell: bash
+      if: ${{ inputs.set_version == 'true' }}
+      run: |
+        echo "__version__ = '${{ steps.actual_version.outputs.version }}'" > "src/helloapp/_version.py"
