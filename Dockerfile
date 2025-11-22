@@ -12,6 +12,7 @@ COPY . /build
 
 RUN chmod a+x ./mvnw && ./mvnw --no-transfer-progress native:compile -P${MVN_PROFILES} -DskipTests=true
 
+# renovate: datasource=github depName=upx/upx
 ARG UPX_VERSION=5.0.2
 
 # hadolint ignore=DL3041
