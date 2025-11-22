@@ -1,0 +1,76 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [ "--fix=lf" ]
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: check-yaml
+        args: [ --allow-multiple-documents ]
+        exclude: |
+          (?x)^(
+              .+/templates/.+\.ya?ml
+          )$
+      - id: check-xml
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 3.4.0
+    hooks:
+      - id: editorconfig-checker
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.34.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-jsonschema
+        name: "Validate yamllint config"
+        files: ^\.yamllint\.ya?ml$
+        types: [ yaml ]
+        args:
+          - --schemafile
+          - https://json.schemastore.org/yamllint.json
+      - id: check-jsonschema
+        name: "Validate markdownlint config"
+        files: ^\.markdownlint\.ya?ml$
+        types: [ yaml ]
+        args:
+          - --schemafile
+          - https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json
+      - id: check-jsonschema
+        name: "Validate Hadolint config"
+        files: ^\.hadolint\.ya?ml$
+        types: [ yaml ]
+        args:
+          - --schemafile
+          - https://raw.githubusercontent.com/hadolint/hadolint/master/contrib/hadolint.json
+      - id: check-jsonschema
+        name: "Validate container-structure-test config"
+        files: container-structure-test\.ya?ml$
+        types: [ yaml ]
+        args:
+          - --schemafile
+          - https://json.schemastore.org/container-structure-test.json
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.30
+    hooks:
+      - id: helmlint

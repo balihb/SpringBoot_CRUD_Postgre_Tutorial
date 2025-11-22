@@ -1,0 +1,6 @@
+schemaVersion: "2.0.0"
+fileExistenceTests:
+  - name: "gunicorn"
+    path: "/demo"
+    shouldExist: true
+    isExecutableBy: "any"

@@ -1,0 +1,52 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+max_line_length = 120
+tab_width = 4
+
+[*.sh]
+max_line_length = 160
+indent_size = 2
+tab_width = 2
+
+[{*.yaml,*.yml,*.json,*.json5,.dive-ci}]
+indent_size = 2
+max_line_length = 300
+
+[.gitignore]
+max_line_length = 220
+
+[README.md]
+# keep in sync with .markdownlint.yaml
+max_line_length = 200
+tab_width = unset
+indent_size = unset
+indent_style = unset
+
+[Dockerfile]
+max_line_length = 256
+
+[LICENSE*]
+indent_size = unset
+indent_style = unset
+insert_final_newline = unset
+max_line_length = unset
+tab_width = unset
+
+[tox.ini]
+max_line_length = 130
+
+[NOTES.txt]
+max_line_length = 256
+indent_size = unset
+indent_style = unset
+insert_final_newline = unset
+tab_width = unset

@@ -1,0 +1,3 @@
+[tools]
+hadolint = '2.14.0'
+helm = '3.19.0'

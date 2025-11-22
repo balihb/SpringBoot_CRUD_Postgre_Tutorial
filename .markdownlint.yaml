@@ -1,0 +1,10 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+# https://github.com/igorshubovych/markdownlint-cli#configuration
+
+line-length:
+  # keep in sync with .editorconfig
+  line_length: 160
+no-bare-urls: false
+descriptive-link-text: false

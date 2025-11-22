@@ -4,9 +4,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +41,7 @@ public class StudentService {
     @Transactional
     public void updateStudent(Long studentId, String name, String email) {
         Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new IllegalStateException("Student with ID " + studentId + " does not exist"));
+            .orElseThrow(() -> new IllegalStateException("Student with ID " + studentId + " does not exist"));
 
         if (name != null && name.length() > 0 && !Objects.equals(name, student.getName())) {
             student.setName(name);
