@@ -9,6 +9,10 @@ repos:
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [ "--fix=lf" ]
+        exclude: |
+          (?x)^(
+              mvnw\.cmd
+          )$
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: check-yaml
