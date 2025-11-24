@@ -92,15 +92,6 @@ jobs:
         with:
           report_paths: 'target/surefire-reports/TEST-*.xml'
 
-      - name: Add coverage to PR
-        id: jacoco
-        if: ( success() || failure() ) && github.event_name == 'pull_request'
-        uses: madrapps/jacoco-report@v1.7.2
-        with:
-          paths: |
-            ${{ github.workspace }}/target/jacoco.exec
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@v12
         continue-on-error: true
