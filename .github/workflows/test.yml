@@ -21,10 +21,6 @@ on:
   workflow_dispatch:
 
 env:
-  # versions
-  # renovate: datasource=docker depName=postgres
-  POSTGRES_VERSION: '18.1-alpine3.22'
-
   # generic
   FORCE_COLOR: '1'
   TERM: ansi
@@ -45,7 +41,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres${{ env.POSTGRES_VERSION }}
+        image: postgres
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: pg-pwd
