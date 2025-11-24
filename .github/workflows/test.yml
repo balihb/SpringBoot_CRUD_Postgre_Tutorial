@@ -92,6 +92,7 @@ jobs:
 
       - name: Add coverage to PR
         id: jacoco
+        if: success() || failure()
         uses: madrapps/jacoco-report@v1.7.2
         with:
           paths: |
