@@ -1,0 +1,129 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - '*.*.*'
+  pull_request:
+    paths:
+      - '.checkov.yaml'
+      - '.github/actions/get-version/action.yml'
+      - '.github/workflows/test.yml'
+      - 'GitVersion.yml'
+      - 'sonar-project.properties'
+      - 'src/**'
+      - 'pom.xml'
+  workflow_dispatch:
+
+env:
+  # versions
+  # renovate: datasource=docker depName=python
+  PYTHON_VERSION: '3.13'
+  # renovate: datasource=pypi depName=tox
+  TOX_VERSION: '4.30.3'
+
+  # generic
+  FORCE_COLOR: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PIP_PROGRESS_BAR: 'off'
+  PYTHONUNBUFFERED: '1'
+  PY_COLORS: '1'
+  TERM: ansi
+  TOX_SKIP_ENV: 'clean'
+
+  # cache
+  PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
+  SONAR_USER_HOME: ${{ github.workspace }}/.cache/sonar
+  XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
+  npm_config_cache: ${{ github.workspace }}/.cache/npm
+
+permissions: read-all
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: pg-pwd
+          POSTGRES_USER: pg-user
+          POSTGRES_DB: student
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: '0'
+
+      - name: Get version
+        uses: ./.github/actions/get-version
+        id: version
+
+      - name: Cache test
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.SONAR_USER_HOME }}/cache
+            ${{ env.XDG_CACHE_HOME }}
+            ${{ env.npm_config_cache }}
+            ${{ github.workspace }}/.cache/checkov
+          key: test-${{ hashFiles('pom.xml') }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+          cache: 'maven'
+          cache-dependency-path: 'pom.xml'
+
+      - name: Run Test
+        continue-on-error: true
+        run: ./mvnw -Drevision=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }} test -Pcoverage
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        continue-on-error: true
+        with:
+          output_format: sarif
+          output_file_path: .report/checkov
+          quiet: true
+          soft_fail: true
+
+      - name: Sonar
+        uses: sonarsource/sonarqube-scan-action@v6
+        id: sonar
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_USER_HOME: ${{ env.SONAR_USER_HOME }}
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }}
+            -Dsonar.links.ci=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            -Dsonar.links.homepage=https://github.com/${{ github.repository }}
+            -Dsonar.links.issue=https://github.com/${{ github.repository }}/issues
+            -Dsonar.links.scm=${{ github.repositoryUrl }}
+            -Dsonar.sarifReportPaths=.report/checkov/results_sarif.sarif
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          include-hidden-files: true
+          path: |
+            .report

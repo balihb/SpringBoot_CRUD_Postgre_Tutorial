@@ -13,11 +13,12 @@
     </parent>
     <groupId>com.example</groupId>
     <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${revision}</version>
     <name>demo</name>
     <description>Demo project for Spring Boot</description>
     <properties>
         <java.version>25</java.version>
+        <revision>0.0.1-SNAPSHOT</revision>
     </properties>
     <dependencies>
         <dependency>
@@ -86,8 +87,6 @@
                                 <arg>--static</arg>
                                 <arg>--libc=musl</arg>
                                 <arg>--no-fallback</arg>
-<!--                                <arg>&#45;&#45;future-defaults=all</arg>-->
-<!--                                <arg>&#45;&#45;exact-reachability-metadata</arg>-->
                                 <arg>-H:+UnlockExperimentalVMOptions</arg>
                                 <arg>-H:+StripDebugInfo</arg>
                                 <arg>-H:+RemoveUnusedSymbols</arg>
@@ -97,6 +96,38 @@
                                 <arg>-R:MaxHeapSize=256m</arg>
                             </buildArgs>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.14</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <formats>
+                                        <format>XML</format>
+                                    </formats>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

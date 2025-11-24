@@ -7,11 +7,7 @@ inputs:
   gitversion_version:
     required: true
     description: "GitVersion version"
-    default: '6.4.0'
-  set_version:
-    required: true
-    description: "Set version in version file"
-    default: 'true'
+    default: '6.5.0'
 outputs:
   version:
     description: "Version"
@@ -39,9 +35,3 @@ runs:
       run: |
         echo "version=${{ github.ref_name == github.event.repository.default_branch && steps.gitversion.outputs.MajorMinorPatch || steps.gitversion.outputs.InformationalVersion }}" >> $GITHUB_OUTPUT
         echo "docker_version=${{ github.ref_name == github.event.repository.default_branch && steps.gitversion.outputs.MajorMinorPatch || format('{0}{1}', steps.gitversion.outputs.MajorMinorPatch, steps.gitversion.outputs.PreReleaseTag) }}" >> $GITHUB_OUTPUT
-
-    - name: Set version
-      shell: bash
-      if: ${{ inputs.set_version == 'true' }}
-      run: |
-        echo "__version__ = '${{ steps.actual_version.outputs.version }}'" > "src/helloapp/_version.py"
