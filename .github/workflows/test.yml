@@ -65,6 +65,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
     steps:
       - uses: actions/checkout@v5
         with:
@@ -93,7 +96,7 @@ jobs:
 
       - name: Run Test
         continue-on-error: true
-        run: ./mvnw -Drevision=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }} test -Pcoverage
+        run: ./mvnw -Drevision=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }} --no-transfer-progress test -Pcoverage
 
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@v12
