@@ -6,7 +6,7 @@ name: Test
 on:
   push:
     branches:
-      - master
+      - main
     tags-ignore:
       - '*.*.*'
   pull_request:
@@ -22,22 +22,14 @@ on:
 
 env:
   # versions
-  # renovate: datasource=docker depName=python
-  PYTHON_VERSION: '3.13'
-  # renovate: datasource=pypi depName=tox
-  TOX_VERSION: '4.30.3'
+  # renovate: datasource=docker depName=postgres
+  POSTGRES_VERSION: '18.1-alpine3.22'
 
   # generic
   FORCE_COLOR: '1'
-  PIP_DISABLE_PIP_VERSION_CHECK: '1'
-  PIP_PROGRESS_BAR: 'off'
-  PYTHONUNBUFFERED: '1'
-  PY_COLORS: '1'
   TERM: ansi
-  TOX_SKIP_ENV: 'clean'
 
   # cache
-  PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
   SONAR_USER_HOME: ${{ github.workspace }}/.cache/sonar
   XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
   npm_config_cache: ${{ github.workspace }}/.cache/npm
@@ -53,7 +45,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres
+        image: postgres${{ env.POSTGRES_VERSION }}
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: pg-pwd
@@ -98,6 +90,18 @@ jobs:
         continue-on-error: true
         run: ./mvnw -Drevision=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }} --no-transfer-progress test -Pcoverage
 
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: scacap/action-surefire-report@v1
+
+      - name: Add coverage to PR
+        id: jacoco
+        uses: madrapps/jacoco-report@v1.7.2
+        with:
+          paths: |
+            ${{ github.workspace }}/target/jacoco.exec
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@v12
         continue-on-error: true
@@ -130,3 +134,5 @@ jobs:
           include-hidden-files: true
           path: |
             .report
+            target/jacoco.exec
+            target/surefire-reports/TEST-*.xml
