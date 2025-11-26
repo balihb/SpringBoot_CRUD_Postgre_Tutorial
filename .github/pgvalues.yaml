@@ -2,3 +2,6 @@ auth:
   user: "pg-user"
   password: "pg-pwd"
   database: "student"
+
+passwordUpdateJob:
+  enabled: true
