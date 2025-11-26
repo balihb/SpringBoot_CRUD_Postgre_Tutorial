@@ -24,6 +24,8 @@ env:
   # generic
   FORCE_COLOR: '1'
   TERM: ansi
+  PIP_PROGRESS_BAR: 'off'
+  PYTHONUNBUFFERED: '1'
 
   # cache
   SONAR_USER_HOME: ${{ github.workspace }}/.cache/sonar
@@ -269,7 +271,7 @@ jobs:
         run: ct lint --all --debug
 
       - name: Run chart-testing (install)
-        run: ct install --all --print-config --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-args "-f=.github/buildvalues.yaml"
+        run: ct install --all --print-config --namespace default --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-args "-f=.github/buildvalues.yaml"
 
       - name: Build container image
         uses: docker/build-push-action@v6
