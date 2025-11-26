@@ -6,4 +6,4 @@ commit-date-format: yyyyMMddHHmm
 assembly-informational-format: '{Major}.{Minor}.{Patch}{PreReleaseLabel}+{CommitDate}.c{CommitsSinceVersionSource}.{Sha}'
 branches:
   pull-request:
-    label: '.dev{Number}'
+    label: '-dev{Number}'
