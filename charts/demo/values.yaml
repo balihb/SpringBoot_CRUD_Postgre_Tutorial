@@ -128,11 +128,11 @@ resources: { }
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 livenessProbe:
   httpGet:
-    path: /student
+    path: /api/v1/student
     port: http
 readinessProbe:
   httpGet:
-    path: /student
+    path: /api/v1/student
     port: http
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
