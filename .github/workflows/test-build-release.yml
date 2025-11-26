@@ -122,22 +122,6 @@ jobs:
         with:
           report_paths: 'target/surefire-reports/TEST-*.xml'
 
-#      - name: Sonar
-#        uses: sonarsource/sonarqube-scan-action@v6
-#        id: sonar
-#        continue-on-error: true
-#        env:
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#          SONAR_USER_HOME: ${{ env.SONAR_USER_HOME }}
-#        with:
-#          args: >
-#            -Dsonar.projectVersion=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }}
-#            -Dsonar.links.ci=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-#            -Dsonar.links.homepage=https://github.com/${{ github.repository }}
-#            -Dsonar.links.issue=https://github.com/${{ github.repository }}/issues
-#            -Dsonar.links.scm=${{ github.repositoryUrl }}
-#            -Dsonar.sarifReportPaths=.report/checkov/results_sarif.sarif
-
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
