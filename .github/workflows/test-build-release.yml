@@ -273,7 +273,7 @@ jobs:
         run: ct lint --all --debug
 
       - name: Run chart-testing (install)
-        run: ct install --all --print-config --namespace default --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-set-args "--values=.github/buildvalues.yaml"
+        run: ct install --all --print-config --namespace default --helm-extra-set-args "--values=.github/buildvalues.yaml --set=image.repository=${{ env.LOCAL_DOCKER_REPO }}"
 
       - name: Build container image
         uses: docker/build-push-action@v6
