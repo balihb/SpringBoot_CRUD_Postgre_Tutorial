@@ -6,7 +6,7 @@ name: Draft a Release
 on:
   push:
     branches:
-      - master
+      - main
     tags-ignore:
       - '*.*.*'
   workflow_dispatch:
