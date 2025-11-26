@@ -1,0 +1,7 @@
+env:
+  - name: SPRING_DATASOURCE_URL
+    value: "postgres-release-postgresql"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "pg-user"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "pg-pwd"

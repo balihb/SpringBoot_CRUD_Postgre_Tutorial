@@ -234,7 +234,7 @@ jobs:
         run: container-structure-test test --image ${{ env.LOCAL_DOCKER_TAG }} --config container-structure-test.yaml
 
       - name: Install Postgres
-        run: helm install postgres-release oci://registry-1.docker.io/bitnamicharts/postgresql
+        run: helm install -f .github/pgvalues.yaml postgres-release oci://registry-1.docker.io/bitnamicharts/postgresql
 
       - name: Update Chart.yaml appVersion
         uses: fjogeleit/yaml-update-action@main
@@ -269,7 +269,7 @@ jobs:
         run: ct lint --all --debug
 
       - name: Run chart-testing (install)
-        run: ct install --all --print-config --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}"
+        run: ct install --all --print-config --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-args "-f=.github/buildvalues.yaml"
 
       - name: Build container image
         uses: docker/build-push-action@v6
