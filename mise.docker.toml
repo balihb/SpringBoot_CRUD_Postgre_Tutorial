@@ -1,0 +1,4 @@
+[tools]
+container-structure-test = '1.21.1'
+dive = '0.13.1'
+helm = '3.19.0'

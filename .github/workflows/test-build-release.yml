@@ -1,0 +1,289 @@
+# Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
+# See LICENSE.puwl in the project root for details.
+
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - '*.*.*'
+  pull_request:
+    paths:
+      - '.checkov.yaml'
+      - '.github/actions/get-version/action.yml'
+      - '.github/workflows/test.yml'
+      - 'GitVersion.yml'
+      - 'sonar-project.properties'
+      - 'src/**'
+      - 'pom.xml'
+  workflow_dispatch:
+
+env:
+  # generic
+  FORCE_COLOR: '1'
+  TERM: ansi
+
+  # cache
+  SONAR_USER_HOME: ${{ github.workspace }}/.cache/sonar
+  XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
+  npm_config_cache: ${{ github.workspace }}/.cache/npm
+
+permissions:
+  checks: write
+  pull-requests: write
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: pg-pwd
+          POSTGRES_USER: pg-user
+          POSTGRES_DB: student
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: '0'
+
+      - name: Get version
+        uses: ./.github/actions/get-version
+        id: version
+
+      - name: Cache test
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.SONAR_USER_HOME }}/cache
+            ${{ env.XDG_CACHE_HOME }}
+            ${{ env.npm_config_cache }}
+            ${{ github.workspace }}/.cache/checkov
+          key: test-${{ hashFiles('pom.xml') }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+          cache: 'maven'
+          cache-dependency-path: 'pom.xml'
+
+      - name: Run Test
+        continue-on-error: true
+        run: ./mvnw -Drevision=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }} --no-transfer-progress test -Pcoverage
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: 'target/surefire-reports/TEST-*.xml'
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        continue-on-error: true
+        with:
+          output_format: sarif
+          output_file_path: .report/checkov
+          quiet: true
+          soft_fail: true
+
+      - name: Sonar
+        uses: sonarsource/sonarqube-scan-action@v6
+        id: sonar
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_USER_HOME: ${{ env.SONAR_USER_HOME }}
+        with:
+          args: >
+            -Dsonar.projectVersion=${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.version }}
+            -Dsonar.links.ci=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            -Dsonar.links.homepage=https://github.com/${{ github.repository }}
+            -Dsonar.links.issue=https://github.com/${{ github.repository }}/issues
+            -Dsonar.links.scm=${{ github.repositoryUrl }}
+            -Dsonar.sarifReportPaths=.report/checkov/results_sarif.sarif
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          include-hidden-files: true
+          path: |
+            .report
+            target/jacoco.exec
+            target/surefire-reports/TEST-*.xml
+
+  build-and-push:
+    needs:
+      - test
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: '0'
+
+      - name: Cache tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.XDG_CACHE_HOME }}
+            ${{ env.npm_config_cache }}
+          key: build-${{ hashFiles('.github/workflows/build.yml') }}
+
+      - uses: jdx/mise-action@v3
+        env:
+          MISE_ENV: docker
+
+      - name: Get version
+        uses: ./.github/actions/get-version
+        id: version
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1
+        id: kind
+        with:
+          registry: true
+          registry_enable_delete: true
+          registry_image: registry:3
+          registry_name: local-registry
+          registry_port: 5001
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+          buildkitd-config-inline: |
+            [registry."${{ steps.kind.outputs.LOCAL_REGISTRY }}"]
+              http = true
+              insecure = true
+          driver-opts: network=host
+
+      - name: Calculate lables
+        run: |
+          LOCAL_DOCKER_REPO="${{ steps.kind.outputs.LOCAL_REGISTRY }}/${{ github.repository }}"
+          echo "LOCAL_DOCKER_REPO=${LOCAL_DOCKER_REPO}" >> $GITHUB_ENV
+          echo "LOCAL_DOCKER_TAG=${LOCAL_DOCKER_REPO}:${{ steps.version.outputs.docker_version }}" >> $GITHUB_ENV
+          echo "LOCAL_DOCKER_CACHE_TAG=${LOCAL_DOCKER_REPO}:cache" >> $GITHUB_ENV
+          GHCR_DOCKER_REPO="ghcr.io/${{ github.repository }}"
+          echo "GHCR_DOCKER_REPO=${GHCR_DOCKER_REPO}" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_TAG=${GHCR_DOCKER_REPO}:${{ steps.version.outputs.docker_version }}" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_LATEST_TAG=${GHCR_DOCKER_REPO}:latest" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_CACHE_TAG=${GHCR_DOCKER_REPO}:cache" >> $GITHUB_ENV
+
+      - name: Build container image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64
+          push: true
+          load: true
+          tags: |
+            ${{ env.LOCAL_DOCKER_TAG }}
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.GHCR_DOCKER_CACHE_TAG }}
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.LOCAL_DOCKER_CACHE_TAG }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+
+      - name: Dive
+        run: dive ${{ env.LOCAL_DOCKER_TAG }}
+        env:
+          CI: 'true'
+
+      - name: Container Structure Tests
+        run: container-structure-test test --image ${{ env.LOCAL_DOCKER_TAG }} --config container-structure-test.yaml
+
+      - name: Install Postgres
+        run: helm install postgres-release oci://registry-1.docker.io/bitnamicharts/postgresql
+
+      - name: Update Chart.yaml appVersion
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: 'charts/demo/Chart.yaml'
+          propertyPath: 'appVersion'
+          value: "${{ steps.version.outputs.docker_version }}"
+          commitChange: false
+
+      - name: Update Chart.yaml version
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: 'charts/demo/Chart.yaml'
+          propertyPath: 'version'
+          value: ${{ env.GitVersion_MajorMinorPatch }}
+          commitChange: false
+
+      - name: Update values.yaml image.repository
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: 'charts/demo/values.yaml'
+          propertyPath: 'image.repository'
+          value: ${{ env.GHCR_DOCKER_REPO }}
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+
+      - name: Run chart-testing (lint)
+        env:
+          VALIDATE_MAINTAINERS: 'false'
+        run: ct lint --all --debug
+
+      - name: Run chart-testing (install)
+        run: ct install --all --print-config --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}"
+
+      - name: Build container image
+        uses: docker/build-push-action@v6
+        if: github.event_name == 'release'
+        with:
+          platforms: linux/amd64
+          push: true
+          load: false
+          tags: |
+            ${{ env.GHCR_DOCKER_TAG }}
+            ${{ env.GHCR_DOCKER_LATEST_TAG }}
+          cache-from: |
+            type=gha
+            type=registry,ref=${{ env.GHCR_DOCKER_CACHE_TAG }}
+          cache-to: |
+            type=gha,mode=max
+            type=registry,ref=${{ env.LOCAL_DOCKER_CACHE_TAG }}
+            type=registry,ref=${{ env.GHCR_DOCKER_CACHE_TAG }}
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+
+      - name: Helm package
+        if: github.event_name == 'release'
+        run: |
+          helm package ./charts/demo
+
+      - name: Helm push
+        if: github.event_name == 'release'
+        run: |
+          helm push demo-${{ steps.version.outputs.docker_version }}.tgz oci://${GHCR_DOCKER_REPO}/helm-charts

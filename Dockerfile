@@ -2,6 +2,7 @@ FROM ghcr.io/graalvm/native-image-community:25.0.1-muslib AS build
 
 ARG BINARY_PLATFORM=amd64
 ARG MVN_PROFILES="native,prod,!dev-validation"
+ARG APP_VERSION=0.0.1-SNAPSHOT
 ENV SPRING_MVC_VALIDATION_ENABLED=false
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -10,7 +11,8 @@ WORKDIR /build
 
 COPY . /build
 
-RUN chmod a+x ./mvnw && ./mvnw --no-transfer-progress native:compile -P${MVN_PROFILES} -DskipTests=true
+RUN chmod a+x ./mvnw && \
+    ./mvnw --no-transfer-progress native:compile -P${MVN_PROFILES} -DskipTests=true -Drevision=${APP_VERSION}
 
 # renovate: datasource=github-releases depName=upx/upx
 ARG UPX_VERSION=5.0.2
