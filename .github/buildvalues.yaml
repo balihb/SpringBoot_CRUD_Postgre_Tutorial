@@ -2,6 +2,6 @@ env:
   - name: SPRING_DATASOURCE_URL
     value: "jdbc:postgresql://postgres-release-postgresql:5432/student"
   - name: SPRING_DATASOURCE_USERNAME
-    value: "postgres"
+    value: "pg-user"
   - name: SPRING_DATASOURCE_PASSWORD
     value: "pg-pwd"
