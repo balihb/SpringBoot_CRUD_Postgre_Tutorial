@@ -9,6 +9,8 @@ on:
       - main
     tags-ignore:
       - '*.*.*'
+  release:
+    types: [ released ]
   pull_request:
     paths:
       - '.checkov.yaml'
