@@ -1,7 +1,7 @@
 # Licensed under the P-EADCA Universal Waiver License (PUWL v2.0draft02)
 # See LICENSE.puwl in the project root for details.
 
-name: Test
+name: Test - Build - Release
 
 on:
   push:
@@ -161,7 +161,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create k8s Kind Cluster
@@ -190,11 +190,21 @@ jobs:
           echo "LOCAL_DOCKER_REPO=${LOCAL_DOCKER_REPO}" >> $GITHUB_ENV
           echo "LOCAL_DOCKER_TAG=${LOCAL_DOCKER_REPO}:${{ steps.version.outputs.docker_version }}" >> $GITHUB_ENV
           echo "LOCAL_DOCKER_CACHE_TAG=${LOCAL_DOCKER_REPO}:cache" >> $GITHUB_ENV
-          GHCR_DOCKER_REPO="ghcr.io/${{ github.repository }}"
+          GHCR_DOCKER_REPO_ORIG="ghcr.io/${{ github.repository }}"
+          GHCR_DOCKER_REPO=${GHCR_DOCKER_REPO_ORIG,,}
           echo "GHCR_DOCKER_REPO=${GHCR_DOCKER_REPO}" >> $GITHUB_ENV
           echo "GHCR_DOCKER_TAG=${GHCR_DOCKER_REPO}:${{ steps.version.outputs.docker_version }}" >> $GITHUB_ENV
           echo "GHCR_DOCKER_LATEST_TAG=${GHCR_DOCKER_REPO}:latest" >> $GITHUB_ENV
           echo "GHCR_DOCKER_CACHE_TAG=${GHCR_DOCKER_REPO}:cache" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_DOCKER_REPO }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.docker_version }}
 
       - name: Build container image
         uses: docker/build-push-action@v6
@@ -212,6 +222,7 @@ jobs:
             type=registry,ref=${{ env.LOCAL_DOCKER_CACHE_TAG }}
           build-args: |
             APP_VERSION=${{ steps.version.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Dive
         run: dive ${{ env.LOCAL_DOCKER_TAG }}
