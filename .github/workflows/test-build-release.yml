@@ -28,6 +28,7 @@ env:
   PYTHONUNBUFFERED: '1'
 
   # cache
+  PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
   SONAR_USER_HOME: ${{ github.workspace }}/.cache/sonar
   XDG_CACHE_HOME: ${{ github.workspace }}/.cache/xdg
   npm_config_cache: ${{ github.workspace }}/.cache/npm
@@ -147,6 +148,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            ${{ env.PIP_CACHE_DIR }}
             ${{ env.XDG_CACHE_HOME }}
             ${{ env.npm_config_cache }}
           key: build-${{ hashFiles('.github/workflows/build.yml') }}
@@ -271,7 +273,7 @@ jobs:
         run: ct lint --all --debug
 
       - name: Run chart-testing (install)
-        run: ct install --all --print-config --namespace default --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-args "-f=.github/buildvalues.yaml"
+        run: ct install --all --print-config --namespace default --helm-extra-set-args "--set=image.repository=${{ env.LOCAL_DOCKER_REPO }}" --helm-extra-set-args "--value=.github/buildvalues.yaml"
 
       - name: Build container image
         uses: docker/build-push-action@v6
