@@ -1,6 +1,7 @@
 auth:
   user: "pg-user"
   password: "pg-pwd"
+  postgresPassword: "pg-pwd"
   database: "student"
 
 passwordUpdateJob:
