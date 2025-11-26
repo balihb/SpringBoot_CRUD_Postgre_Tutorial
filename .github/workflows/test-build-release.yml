@@ -258,6 +258,7 @@ jobs:
           valueFile: 'charts/demo/values.yaml'
           propertyPath: 'image.repository'
           value: ${{ env.GHCR_DOCKER_REPO }}
+          commitChange: false
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.7.0
