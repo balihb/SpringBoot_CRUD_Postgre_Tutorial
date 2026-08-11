@@ -15,7 +15,7 @@ on:
 env:
   # version
   # renovate: datasource=pypi depName=pre-commit
-  PRE_COMMIT_VERSION: '4.3.0'
+  PRE_COMMIT_VERSION: '4.6.2'
   # renovate: datasource=docker depName=python
   PYTHON_VERSION: '3.13'
 
