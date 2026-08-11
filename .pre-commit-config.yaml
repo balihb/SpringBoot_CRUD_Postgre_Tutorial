@@ -23,11 +23,11 @@ repos:
           )$
       - id: check-xml
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.4.0
+    rev: 3.11.1
     hooks:
       - id: editorconfig-checker
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.34.0
+    rev: 0.38.0
     hooks:
       - id: check-github-workflows
       - id: check-jsonschema
@@ -63,7 +63,7 @@ repos:
           # renovate: datasource=pypi
           - pyjson5==1.6.9
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -71,11 +71,11 @@ repos:
     hooks:
       - id: shellcheck
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0
+    rev: v2.15.1
     hooks:
       - id: hadolint
   - repo: https://github.com/gruntwork-io/pre-commit
